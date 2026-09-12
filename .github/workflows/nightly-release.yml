@@ -1,0 +1,39 @@
+name: Nightly Release
+
+# Builds a rolling nightly release from the latest main branch commit.
+# Updates the rolling `nightly` tag and replaces the assets on GitHub Releases.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "gradle.properties"
+      - "settings.gradle.kts"
+      - ".github/workflows/nightly-release.yml"
+      - ".github/workflows/_release-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly-release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    if: "!startsWith(github.event.head_commit.message, 'release: cut ')"
+    uses: ./.github/workflows/_release-build.yml
+    with:
+      tag: nightly
+      checkout_ref: ${{ github.sha }}
+      prerelease: true
+      make_latest: false
+      release_name: iBeacon Nightly
+      version_name: 1.0.0-nightly
+      rolling_tag: true
+    secrets: inherit

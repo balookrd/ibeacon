@@ -1,0 +1,33 @@
+name: Tag Release
+
+# Builds and publishes a stable release when a version tag (e.g. v1.0.0) is pushed,
+# or when triggered manually via workflow_dispatch.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.1)"
+        required: true
+        type: string
+        default: "v1.0.1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: ./.github/workflows/_release-build.yml
+    with:
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      prerelease: false
+      make_latest: true
+      rolling_tag: false
+    secrets: inherit

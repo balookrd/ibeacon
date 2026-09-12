@@ -191,9 +191,13 @@ The repository features automated **GitHub Actions** workflows:
 - **CI (`.github/workflows/ci.yml`)**:
   - Triggers on every Pull Request and push to `main`.
   - Runs unit tests (`./gradlew test`), linter checks (`./gradlew lintDebug`), and builds the debug APK (`./gradlew assembleDebug`).
-- **Release (`.github/workflows/release.yml`)**:
-  - Automatically triggers when a tag matching `v*` (e.g. `v1.0.0`) is pushed, or manually through **Actions -> Release -> Run workflow**.
-  - Automatically calculates incremental `versionCode` from build epoch time (`$(( $(date -u +%s) / 60 ))`), ensuring that subsequent builds can be cleanly installed over previous ones.
+- **Nightly Releases (`.github/workflows/nightly-release.yml`)**:
+  - Automatically triggered upon every commit to `main` (continuous deployment).
+  - Published as a pre-release under the rolling `nightly` tag.
+  - APK artifacts include the short commit hash (e.g. `ibeacon-nightly-88fbab7.apk`).
+- **Stable Releases (`.github/workflows/tag-release.yml`)**:
+  - Automatically triggers when a tag matching `v*` (e.g. `v1.0.0`) is pushed, or manually through **Actions -> Tag Release -> Run workflow**.
+  - Automatically calculates incremental `versionCode` from build epoch time (`$(( $(date -u +%s) / 60 ))`), ensuring that subsequent builds (nightly or release) can be cleanly installed over previous ones.
   - Assembles the release APK with R8 code and resource shrinking.
   - Computes SHA-256 checksums (`SHA256SUMS.txt`).
   - Creates a GitHub Release, attaches the release APK and checksum file, and generates release notes.
@@ -208,7 +212,7 @@ git push origin v1.0.0
 
 **Method 2: Manual Trigger via GitHub UI**
 1. Open the repository on GitHub.
-2. Go to **Actions** -> **Release**.
+2. Go to **Actions** -> **Tag Release**.
 3. Click **Run workflow**, enter the tag name (e.g. `v1.0.0`), and start the run.
 
 ### Repository Signing Secrets

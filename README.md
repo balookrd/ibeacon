@@ -191,9 +191,13 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 - **CI (`.github/workflows/ci.yml`)**:
   - Запускается при каждом Pull Request и push в ветку `main`.
   - Запускает юнит-тесты (`./gradlew test`), проверку линтера (`./gradlew lintDebug`) и сборку debug APK (`./gradlew assembleDebug`).
-- **Release (`.github/workflows/release.yml`)**:
-  - Запускается автоматически при публикации тега вида `v*` (например, `v1.0.0`) или вручную через **Actions -> Release -> Run workflow**.
-  - Инкрементирует `versionCode` по временной шкале сборки (epoch minutes: `$(( $(date -u +%s) / 60 ))`), гарантируя корректное обновление APK поверх предыдущих версий.
+- **Nightly Releases (`.github/workflows/nightly-release.yml`)**:
+  - Собирается автоматически при каждом обновлении ветки `main` (continuous deployment).
+  - Публикуется как пре-релиз под плавающим тегом `nightly`.
+  - APK именуется с хешем коммита (например, `ibeacon-nightly-88fbab7.apk`).
+- **Stable Releases (`.github/workflows/tag-release.yml`)**:
+  - Запускается автоматически при публикации тега вида `v*` (например, `v1.0.0`) или вручную через **Actions -> Tag Release -> Run workflow**.
+  - Инкрементирует `versionCode` по временной шкале сборки (epoch minutes: `$(( $(date -u +%s) / 60 ))`), гарантируя, что любая более свежая сборка (nightly или release) бесшовно устанавливается поверх предыдущей.
   - Собирает релизный APK с R8-оптимизацией.
   - Считает контрольные суммы SHA-256 (`SHA256SUMS.txt`).
   - Создаёт GitHub Release с прикреплением готового APK, файла контрольных сумм и списка изменений (Release Notes).
@@ -208,7 +212,7 @@ git push origin v1.0.0
 
 **Способ 2: Ручной запуск через GitHub**
 1. Откройте репозиторий на GitHub.
-2. Перейдите во вкладку **Actions** -> **Release**.
+2. Перейдите во вкладку **Actions** -> **Tag Release**.
 3. Нажмите **Run workflow**, укажите тег (например, `v1.0.0`) и запустите сборку.
 
 ### Настройка подписи в GitHub Secrets
