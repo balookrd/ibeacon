@@ -13,6 +13,7 @@
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" /></a>
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose M3" /></a>
   <a href="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml"><img src="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/balookrd/ibeacon/releases"><img src="https://img.shields.io/github/v/release/balookrd/ibeacon?logo=github&color=blue" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" /></a>
 </p>
 
@@ -45,9 +46,9 @@
 - **Стандартный протокол iBeacon**: формирование корректного 30-байтового пакета BLE Advertising (Apple Company ID `0x004C`, тип `0x02`, длина `0x15`).
 - **Современный интерфейс Material 3**:
   - Поддержка **Material You Dynamic Color** (Android 12+) — цвета адаптируются под системную тему и обои.
-  - Полноценная тёмная и светлая темы.
+  - Полноценная тёмная и светлая темы оформления.
   - **Hero-карточка статуса**: анимированный радар, живой таймер Uptime, краткая сводка параметров и счётчик автовосстановлений службы.
-  - Сегментированные переключатели частоты и мощности радиосигнала.
+  - Сегментированные переключатели частоты и мощности радиосигнала с защитой от переноса строк на узких и складных экранах.
   - Генератор случайного UUID и удобное копирование идентификатора в буфер обмена.
   - Валидация входных данных с подсветкой некорректных диапазонов.
 - **Интерактивный чек-лист «Живучесть»**:
@@ -56,7 +57,34 @@
 - **Интеграция со шторкой уведомлений**:
   - Постоянное Foreground Service уведомление с актуальным статусом и идентификатором маяка.
   - Кнопка быстрой остановки («Остановить») прямо из уведомления.
-  - Утончённая векторная иконка маяка в строке состояния Android.
+  - Утончённая векторная иконка маяка в строке состояния Android (разрешение 24×24 dp в едином стиле с лаунчером).
+
+---
+
+## 🏗️ Архитектура проекта и кодовая база
+
+```
+app/src/main/java/com/balookrd/ibeacon/
+├── beacon/              # Логика протокола и передатчика
+│   ├── IBeaconPayload.kt   # Сборка 23-байтового пакета iBeacon в BLE AD structure
+│   ├── BeaconConfig.kt     # Валидация UUID, major, minor, measured power, пресеты
+│   ├── BeaconAdvertiser.kt # Управление BluetoothLeAdvertiser и обработка ошибок стека
+│   └── BeaconStatus.kt     # Реактивная шина состояния вещания (BeaconStatusBus)
+├── service/             # Фоновая служба трансляции
+│   └── BeaconService.kt    # Foreground Service (connectedDevice), WakeLock, Self-check
+├── keepalive/           # Механизмы живучести и сторожевые таймеры
+│   ├── WatchdogAlarm.kt    # Точный AlarmManager для периодического пробуждения из Doze
+│   ├── WatchdogWorker.kt   # Периодический WorkManager (15 мин) для отказоустойчивости
+│   ├── BootReceiver.kt     # Приёмники BOOT_COMPLETED, LOCKED_BOOT_COMPLETED, PACKAGE_REPLACED
+│   └── KeepAliveHelper.kt  # Проверка готовности системы, разрешений и настроек вендоров
+├── data/                # Хранение состояния
+│   └── SettingsRepository.kt # Настройки в Device-Protected Storage (доступны до разблокировки)
+└── ui/                  # Пользовательский интерфейс на Jetpack Compose
+    ├── MainActivity.kt     # Главная Activity с запросом системных разрешений
+    ├── BeaconViewModel.kt  # Управление формой, состоянием и интеграцией с репозиторием
+    ├── BeaconScreen.kt     # Material 3 UI: Hero-карточка, поля ввода, чек-лист, сегменты
+    └── Theme.kt            # Material 3 палитра и Material You Dynamic Colors
+```
 
 ---
 
@@ -115,7 +143,10 @@ Android регулирует частоту пакетов через систе
 
 ## 🛠️ Сборка и установка
 
-### Требования
+### Готовые релизы
+Готовые подписанные APK-файлы доступны на странице [GitHub Releases](https://github.com/balookrd/ibeacon/releases).
+
+### Требования к разработке
 - **Android Studio** Ladybug (2024.2+) или новее.
 - **JDK 17+** (встроенный в Android Studio JBR).
 - **Android SDK Platform 35**.
@@ -132,7 +163,7 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 ```
 
 ### Сборка оптимизированного Release APK
-Для релизной сборки создайте файл `keystore.properties` в корне проекта (он добавлен в `.gitignore`):
+Для локальной релизной сборки создайте файл `keystore.properties` в корне проекта (он добавлен в `.gitignore`):
 ```properties
 storeFile=keystore/release.jks
 storePassword=ВАШ_ПАРОЛЬ_ХРАНИЛИЩА
@@ -153,6 +184,44 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 
 ---
 
+## 🔄 Непрерывная интеграция и релизы (CI/CD)
+
+В репозитории настроены автоматические сценарии **GitHub Actions**:
+
+- **CI (`.github/workflows/ci.yml`)**:
+  - Запускается при каждом Pull Request и push в ветку `main`.
+  - Запускает юнит-тесты (`./gradlew test`), проверку линтера (`./gradlew lintDebug`) и сборку debug APK (`./gradlew assembleDebug`).
+- **Release (`.github/workflows/release.yml`)**:
+  - Запускается автоматически при публикации тега вида `v*` (например, `v1.0.0`) или вручную через **Actions -> Release -> Run workflow**.
+  - Инкрементирует `versionCode` по временной шкале сборки (epoch minutes: `$(( $(date -u +%s) / 60 ))`), гарантируя корректное обновление APK поверх предыдущих версий.
+  - Собирает релизный APK с R8-оптимизацией.
+  - Считает контрольные суммы SHA-256 (`SHA256SUMS.txt`).
+  - Создаёт GitHub Release с прикреплением готового APK, файла контрольных сумм и списка изменений (Release Notes).
+
+### Как выпустить релиз
+
+**Способ 1: Создание Git-тега**
+```bash
+git tag -s v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+**Способ 2: Ручной запуск через GitHub**
+1. Откройте репозиторий на GitHub.
+2. Перейдите во вкладку **Actions** -> **Release**.
+3. Нажмите **Run workflow**, укажите тег (например, `v1.0.0`) и запустите сборку.
+
+### Настройка подписи в GitHub Secrets
+Для автоматической подписи релизных APK добавьте секреты в настройках репозитория (*Settings -> Secrets and variables -> Actions*):
+- `KEYSTORE_BASE64`: содержимое файла `release.jks`, закодированное в Base64 (`base64 -i keystore/release.jks | pbcopy` на macOS).
+- `KEYSTORE_PASSWORD`: пароль от хранилища ключей.
+- `KEY_ALIAS`: имя алиаса ключа.
+- `KEY_PASSWORD`: пароль от ключа.
+
+*Если секреты не заданы, релизная сборка создаст неподписанный APK.*
+
+---
+
 ## 📋 Рекомендации для различных прошивок (OEM)
 
 На некоторых прошивках со строгим контролем фоновой активности необходимо выполнить ручную настройку (для удобства в приложении предусмотрен чек-лист с прямыми переходами в настройки):
@@ -169,31 +238,6 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 
 > [!NOTE]
 > Принудительная остановка приложения пользователем из системных настроек («Остановить принудительно») блокирует все будильники и фоновые задачи приложения до следующего ручного запуска. Это ограничение безопасности Android, общее для всех приложений.
-
----
-
-## 🔄 Непрерывная интеграция и релизы (CI/CD)
-
-В репозитории настроены автоматические сценарии **GitHub Actions**:
-
-- **CI (`.github/workflows/ci.yml`)**:
-  - Запускается при каждом Pull Request и push в ветку `main`.
-  - Запускает юнит-тесты (`./gradlew test`), проверку линтера (`./gradlew lintDebug`) и сборку debug APK (`./gradlew assembleDebug`).
-- **Release (`.github/workflows/release.yml`)**:
-  - Запускается автоматически при публикации тега вида `v*` (например, `v1.0.0`) или вручную через **Actions -> Release -> Run workflow**.
-  - Инкрементирует `versionCode` по временной шкале сборки.
-  - Собирает релизный APK с R8-оптимизацией.
-  - Считает контрольные суммы SHA-256 (`SHA256SUMS.txt`).
-  - Создаёт GitHub Release с прикреплением готового APK, файла контрольных сумм и списка изменений (Release Notes).
-
-### Настройка подписи в GitHub Secrets
-Для автоматической подписи релизных APK добавьте секреты в настройках репозитория (*Settings -> Secrets and variables -> Actions*):
-- `KEYSTORE_BASE64`: содержимое файла `release.jks`, закодированное в Base64 (`base64 -i keystore/release.jks | pbcopy` на macOS).
-- `KEYSTORE_PASSWORD`: пароль от хранилища ключей.
-- `KEY_ALIAS`: имя алиаса ключа.
-- `KEY_PASSWORD`: пароль от ключа.
-
-*Если секреты не заданы, релизная сборка создаст неподписанный APK.*
 
 ---
 

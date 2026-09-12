@@ -13,6 +13,7 @@
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" /></a>
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose M3" /></a>
   <a href="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml"><img src="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/balookrd/ibeacon/releases"><img src="https://img.shields.io/github/v/release/balookrd/ibeacon?logo=github&color=blue" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" /></a>
 </p>
 
@@ -47,7 +48,7 @@ The core goal of the project is **reliable, continuous advertisement**. Most exi
   - Full support for **Material You Dynamic Color** (Android 12+) — color scheme adapts to system wallpaper and palette.
   - Complete Dark and Light theme implementations.
   - **Status Hero Card**: Animated radar, real-time uptime timer, live parameter summary, and revival counter.
-  - Single-choice segmented button rows for advertisement rate and transmitter power.
+  - Single-choice segmented button rows for advertisement rate and transmitter power with line-wrapping prevention on foldable and compact displays.
   - Random UUID generator and one-tap clipboard copy button.
   - Real-time form validation with clear field highlighting for out-of-range values.
 - **Interactive Keep-Alive Checklist**:
@@ -56,7 +57,34 @@ The core goal of the project is **reliable, continuous advertisement**. Most exi
 - **Notification Shade Integration**:
   - Persistent Foreground Service notification showing live broadcast parameters.
   - One-tap "Stop" action directly from the notification shade.
-  - Clean, dedicated monochrome beacon icon in the Android status bar.
+  - Clean, dedicated monochrome beacon icon in the Android status bar (24×24 dp matching the launcher style).
+
+---
+
+## 🏗️ Project Architecture & Codebase Structure
+
+```
+app/src/main/java/com/balookrd/ibeacon/
+├── beacon/              # Protocol and transmitter logic
+│   ├── IBeaconPayload.kt   # Constructs the 23-byte iBeacon BLE AD structure
+│   ├── BeaconConfig.kt     # Validation for UUID, major, minor, measured power, presets
+│   ├── BeaconAdvertiser.kt # BluetoothLeAdvertiser wrapper and error handling
+│   └── BeaconStatus.kt     # Reactive status bus (BeaconStatusBus)
+├── service/             # Background broadcast service
+│   └── BeaconService.kt    # Foreground Service (connectedDevice), WakeLock, Self-check loop
+├── keepalive/           # Resilience watchdogs and receivers
+│   ├── WatchdogAlarm.kt    # Exact AlarmManager watchdog punching through Doze mode
+│   ├── WatchdogWorker.kt   # Periodic WorkManager worker (15-min) for boot & idle resilience
+│   ├── BootReceiver.kt     # Receivers for BOOT_COMPLETED, LOCKED_BOOT_COMPLETED, PACKAGE_REPLACED
+│   └── KeepAliveHelper.kt  # System readiness inspection and OEM settings helper
+├── data/                # Persistence layer
+│   └── SettingsRepository.kt # Settings stored in Device-Protected Storage (pre-unlock access)
+└── ui/                  # Jetpack Compose UI
+    ├── MainActivity.kt     # Main entry point and runtime permission requests
+    ├── BeaconViewModel.kt  # Form management, validation, and repository binding
+    ├── BeaconScreen.kt     # Material 3 UI: Hero card, input controls, checklist, segments
+    └── Theme.kt            # Material 3 color palettes and Material You Dynamic Colors
+```
 
 ---
 
@@ -115,7 +143,10 @@ Controls signal coverage and physical range:
 
 ## 🛠️ Build and Installation
 
-### Prerequisites
+### Pre-built Releases
+Ready-to-install signed APK packages are available on [GitHub Releases](https://github.com/balookrd/ibeacon/releases).
+
+### Development Prerequisites
 - **Android Studio** Ladybug (2024.2+) or newer.
 - **JDK 17+** (bundled JBR in Android Studio).
 - **Android SDK Platform 35**.
@@ -153,6 +184,44 @@ Output: `app/build/outputs/apk/release/app-release.apk` (~1.2 MB).
 
 ---
 
+## 🔄 Continuous Integration & Releases (CI/CD)
+
+The repository features automated **GitHub Actions** workflows:
+
+- **CI (`.github/workflows/ci.yml`)**:
+  - Triggers on every Pull Request and push to `main`.
+  - Runs unit tests (`./gradlew test`), linter checks (`./gradlew lintDebug`), and builds the debug APK (`./gradlew assembleDebug`).
+- **Release (`.github/workflows/release.yml`)**:
+  - Automatically triggers when a tag matching `v*` (e.g. `v1.0.0`) is pushed, or manually through **Actions -> Release -> Run workflow**.
+  - Automatically calculates incremental `versionCode` from build epoch time (`$(( $(date -u +%s) / 60 ))`), ensuring that subsequent builds can be cleanly installed over previous ones.
+  - Assembles the release APK with R8 code and resource shrinking.
+  - Computes SHA-256 checksums (`SHA256SUMS.txt`).
+  - Creates a GitHub Release, attaches the release APK and checksum file, and generates release notes.
+
+### How to Cut a Release
+
+**Method 1: Using a Git Tag**
+```bash
+git tag -s v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+**Method 2: Manual Trigger via GitHub UI**
+1. Open the repository on GitHub.
+2. Go to **Actions** -> **Release**.
+3. Click **Run workflow**, enter the tag name (e.g. `v1.0.0`), and start the run.
+
+### Repository Signing Secrets
+To produce signed APKs in GitHub Actions, configure the following secrets (*Settings -> Secrets and variables -> Actions*):
+- `KEYSTORE_BASE64`: The `release.jks` file encoded as Base64 (`base64 -i keystore/release.jks | pbcopy` on macOS).
+- `KEYSTORE_PASSWORD`: Keystore password.
+- `KEY_ALIAS`: Key alias.
+- `KEY_PASSWORD`: Key password.
+
+*If secrets are omitted, the workflow will produce an unsigned release APK.*
+
+---
+
 ## 📋 Vendor Firmware Guidelines (OEM)
 
 Aggressive background managers on OEM devices may require one-time manual setup (supported by the in-app checklist):
@@ -169,31 +238,6 @@ Aggressive background managers on OEM devices may require one-time manual setup 
 
 > [!NOTE]
 > Triggering "Force Stop" from Android system settings blocks all alarms and background jobs until manually launched again. This is an Android security constraint common to all apps.
-
----
-
-## 🔄 Continuous Integration & Releases (CI/CD)
-
-The repository features automated **GitHub Actions** workflows:
-
-- **CI (`.github/workflows/ci.yml`)**:
-  - Triggers on every Pull Request and push to `main`.
-  - Runs unit tests (`./gradlew test`), linter checks (`./gradlew lintDebug`), and builds the debug APK (`./gradlew assembleDebug`).
-- **Release (`.github/workflows/release.yml`)**:
-  - Automatically triggers when a tag matching `v*` (e.g. `v1.0.0`) is pushed, or manually through **Actions -> Release -> Run workflow**.
-  - Automatically calculates incremental `versionCode` from build epoch time.
-  - Assembles the release APK with R8 code and resource shrinking.
-  - Computes SHA-256 checksums (`SHA256SUMS.txt`).
-  - Creates a GitHub Release, attaches the release APK and checksum file, and generates release notes.
-
-### Repository Signing Secrets
-To produce signed APKs in GitHub Actions, configure the following secrets (*Settings -> Secrets and variables -> Actions*):
-- `KEYSTORE_BASE64`: The `release.jks` file encoded as Base64 (`base64 -i keystore/release.jks | pbcopy` on macOS).
-- `KEYSTORE_PASSWORD`: Keystore password.
-- `KEY_ALIAS`: Key alias.
-- `KEY_PASSWORD`: Key password.
-
-*If secrets are omitted, the workflow will produce an unsigned release APK.*
 
 ---
 
