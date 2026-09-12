@@ -1,7 +1,7 @@
 # iBeacon Broadcaster for Android
 
 <p align="center">
-  <img src="app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" width="96" height="96" alt="iBeacon Icon" />
+  <img src="docs/images/icon.png" width="108" height="108" alt="iBeacon Icon" />
 </p>
 
 <p align="center">

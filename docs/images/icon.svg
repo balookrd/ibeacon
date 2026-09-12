@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="12" y1="12" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00A8B5" />
+      <stop offset="50%" stop-color="#006680" />
+      <stop offset="100%" stop-color="#003544" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle container matching Android adaptive icon -->
+  <rect width="108" height="108" rx="24" fill="url(#bgGrad)" />
+
+  <!-- Glowing center aura for depth -->
+  <circle cx="54" cy="52" r="36" fill="#FFFFFF" fill-opacity="0.2" />
+
+  <!-- Outer radio waves -->
+  <path d="M37.5 32 A26 26 0 0 0 37.5 72" stroke="#FFFFFF" stroke-width="3.2" stroke-opacity="0.6" stroke-linecap="round" fill="none" />
+  <path d="M70.5 32 A26 26 0 0 1 70.5 72" stroke="#FFFFFF" stroke-width="3.2" stroke-opacity="0.6" stroke-linecap="round" fill="none" />
+
+  <!-- Inner radio waves -->
+  <path d="M44 40 A15 15 0 0 0 44 64" stroke="#FFFFFF" stroke-width="3.6" stroke-opacity="0.95" stroke-linecap="round" fill="none" />
+  <path d="M64 40 A15 15 0 0 1 64 64" stroke="#FFFFFF" stroke-width="3.6" stroke-opacity="0.95" stroke-linecap="round" fill="none" />
+
+  <!-- Beacon Spire & Platform -->
+  <path d="M54 58 L54 74" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" fill="none" />
+  <path d="M46.5 74 L61.5 74" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" fill="none" />
+
+  <!-- Radiant Core -->
+  <circle cx="54" cy="52" r="7.5" fill="#FFFFFF" fill-opacity="0.5" />
+  <circle cx="54" cy="52" r="5" fill="#FFFFFF" />
+</svg>
