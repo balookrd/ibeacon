@@ -12,6 +12,7 @@
   <a href="https://developer.android.com/about/versions/15"><img src="https://img.shields.io/badge/Android-8.0%20..%2015%20(API%2026--35)-3DDC84?logo=android&logoColor=white" alt="Android Support" /></a>
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" /></a>
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose M3" /></a>
+  <a href="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml"><img src="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" /></a>
 </p>
 
@@ -168,6 +169,31 @@ Aggressive background managers on OEM devices may require one-time manual setup 
 
 > [!NOTE]
 > Triggering "Force Stop" from Android system settings blocks all alarms and background jobs until manually launched again. This is an Android security constraint common to all apps.
+
+---
+
+## 🔄 Continuous Integration & Releases (CI/CD)
+
+The repository features automated **GitHub Actions** workflows:
+
+- **CI (`.github/workflows/ci.yml`)**:
+  - Triggers on every Pull Request and push to `main`.
+  - Runs unit tests (`./gradlew test`), linter checks (`./gradlew lintDebug`), and builds the debug APK (`./gradlew assembleDebug`).
+- **Release (`.github/workflows/release.yml`)**:
+  - Automatically triggers when a tag matching `v*` (e.g. `v1.0.0`) is pushed, or manually through **Actions -> Release -> Run workflow**.
+  - Automatically calculates incremental `versionCode` from build epoch time.
+  - Assembles the release APK with R8 code and resource shrinking.
+  - Computes SHA-256 checksums (`SHA256SUMS.txt`).
+  - Creates a GitHub Release, attaches the release APK and checksum file, and generates release notes.
+
+### Repository Signing Secrets
+To produce signed APKs in GitHub Actions, configure the following secrets (*Settings -> Secrets and variables -> Actions*):
+- `KEYSTORE_BASE64`: The `release.jks` file encoded as Base64 (`base64 -i keystore/release.jks | pbcopy` on macOS).
+- `KEYSTORE_PASSWORD`: Keystore password.
+- `KEY_ALIAS`: Key alias.
+- `KEY_PASSWORD`: Key password.
+
+*If secrets are omitted, the workflow will produce an unsigned release APK.*
 
 ---
 

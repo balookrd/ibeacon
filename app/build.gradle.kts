@@ -6,10 +6,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Signing credentials stay out of the repo; see keystore.properties.
+// Signing credentials stay out of the repo; see keystore.properties or CI env vars.
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("keystore.properties")
     if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun resolveKeystoreProperty(propName: String, envVar: String): String? {
+    return System.getenv(envVar)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(propName)?.takeIf { it.isNotBlank() }
 }
 
 android {
@@ -20,18 +25,21 @@ android {
         applicationId = "com.balookrd.ibeacon"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = System.getenv("BUILD_VERSION_CODE")?.toIntOrNull() ?: 1
+        versionName = System.getenv("BUILD_VERSION_NAME") ?: "1.0"
     }
 
     signingConfigs {
         create("release") {
-            val storePath = keystoreProperties.getProperty("storeFile")
+            val storePath = resolveKeystoreProperty("storeFile", "KEYSTORE_FILE")
             if (storePath != null) {
-                storeFile = rootProject.file(storePath)
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                val resolvedFile = file(storePath).let { if (it.isAbsolute) it else rootProject.file(storePath) }
+                if (resolvedFile.exists()) {
+                    storeFile = resolvedFile
+                    storePassword = resolveKeystoreProperty("storePassword", "KEYSTORE_PASSWORD")
+                    keyAlias = resolveKeystoreProperty("keyAlias", "KEY_ALIAS")
+                    keyPassword = resolveKeystoreProperty("keyPassword", "KEY_PASSWORD")
+                }
             }
         }
     }
@@ -41,9 +49,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Falls back to an unsigned build when keystore.properties is absent.
+            // Falls back to an unsigned build when keystore credentials are not provided.
             signingConfig = signingConfigs.getByName("release").takeIf {
-                keystoreProperties.getProperty("storeFile") != null
+                it.storeFile != null && it.storeFile!!.exists()
             }
         }
     }

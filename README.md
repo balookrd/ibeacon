@@ -12,6 +12,7 @@
   <a href="https://developer.android.com/about/versions/15"><img src="https://img.shields.io/badge/Android-8.0%20..%2015%20(API%2026--35)-3DDC84?logo=android&logoColor=white" alt="Android Support" /></a>
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" /></a>
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose M3" /></a>
+  <a href="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml"><img src="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" /></a>
 </p>
 
@@ -168,6 +169,31 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 
 > [!NOTE]
 > Принудительная остановка приложения пользователем из системных настроек («Остановить принудительно») блокирует все будильники и фоновые задачи приложения до следующего ручного запуска. Это ограничение безопасности Android, общее для всех приложений.
+
+---
+
+## 🔄 Непрерывная интеграция и релизы (CI/CD)
+
+В репозитории настроены автоматические сценарии **GitHub Actions**:
+
+- **CI (`.github/workflows/ci.yml`)**:
+  - Запускается при каждом Pull Request и push в ветку `main`.
+  - Запускает юнит-тесты (`./gradlew test`), проверку линтера (`./gradlew lintDebug`) и сборку debug APK (`./gradlew assembleDebug`).
+- **Release (`.github/workflows/release.yml`)**:
+  - Запускается автоматически при публикации тега вида `v*` (например, `v1.0.0`) или вручную через **Actions -> Release -> Run workflow**.
+  - Инкрементирует `versionCode` по временной шкале сборки.
+  - Собирает релизный APK с R8-оптимизацией.
+  - Считает контрольные суммы SHA-256 (`SHA256SUMS.txt`).
+  - Создаёт GitHub Release с прикреплением готового APK, файла контрольных сумм и списка изменений (Release Notes).
+
+### Настройка подписи в GitHub Secrets
+Для автоматической подписи релизных APK добавьте секреты в настройках репозитория (*Settings -> Secrets and variables -> Actions*):
+- `KEYSTORE_BASE64`: содержимое файла `release.jks`, закодированное в Base64 (`base64 -i keystore/release.jks | pbcopy` на macOS).
+- `KEYSTORE_PASSWORD`: пароль от хранилища ключей.
+- `KEY_ALIAS`: имя алиаса ключа.
+- `KEY_PASSWORD`: пароль от ключа.
+
+*Если секреты не заданы, релизная сборка создаст неподписанный APK.*
 
 ---
 
