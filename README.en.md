@@ -14,6 +14,7 @@
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose M3" /></a>
   <a href="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml"><img src="https://github.com/balookrd/ibeacon/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <a href="https://github.com/balookrd/ibeacon/releases"><img src="https://img.shields.io/github/v/release/balookrd/ibeacon?logo=github&color=blue" alt="Latest Release" /></a>
+  <a href="https://github.com/balookrd/ibeacon/releases/tag/nightly"><img src="https://img.shields.io/badge/Release-Nightly-orange?logo=github" alt="Nightly Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" /></a>
 </p>
 
