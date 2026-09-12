@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+
+    <!-- Внешние радиоволны -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M6,6 A7.8,7.8 0 0,0 6,16" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M18,6 A7.8,7.8 0 0,1 18,16" />
+
+    <!-- Внутренние радиоволны -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M9,8 A4.2,4.2 0 0,0 9,14" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M15,8 A4.2,4.2 0 0,1 15,14" />
+
+    <!-- Стойка и основание маяка -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M12,13 L12,19" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M9.5,19 L14.5,19" />
+
+    <!-- Светящееся ядро маяка -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,11m-2,0a2,2 0,1,1 4,0a2,2 0,1,1 -4,0" />
+
+</vector>
